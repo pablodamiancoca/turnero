@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${empresa.nombre} + ' · Turnos'">Turnos</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style th:inline="text">
+        :root {
+            --color-primario: [[${empresa.colorPrimario}]];
+            --color-secundario: [[${empresa.colorSecundario}]];
+        }
+    </style>
+</head>
+<body>
+    <div class="encabezado">
+        <img th:if="${empresa.logoUrl}" th:src="${empresa.logoUrl}" alt="logo">
+        <h1 th:text="${empresa.nombre}">Nombre de la empresa</h1>
+    </div>
+
+    <div class="contenedor">
+        <div class="tarjeta">
+            <div class="etiqueta">Atendiendo ahora</div>
+            <div class="numero-actual" id="numero-actual">--</div>
+            <div class="info-espera" id="info-ventanilla"></div>
+            <div class="info-espera" id="info-espera">Personas en espera: --</div>
+        </div>
+        <div class="pie">
+            Para tomar un número, ingresá a
+            <strong th:text="${'/' + empresa.slug + '/tomar'}">/empresa/tomar</strong>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        const slug = /*[[${empresa.slug}]]*/ 'demo';
+
+        function pintar(datos) {
+            document.getElementById('numero-actual').textContent = datos.etiqueta;
+            document.getElementById('info-espera').textContent = 'Personas en espera: ' + datos.enEspera;
+            document.getElementById('info-ventanilla').textContent = datos.ventanilla ? ('Ventanilla: ' + datos.ventanilla) : '';
+        }
+
+        // Estado inicial al cargar la página
+        fetch('/api/' + slug + '/actual').then(r => r.json()).then(pintar).catch(() => {});
+
+        // Actualización en tiempo real vía Server-Sent Events
+        const fuente = new EventSource('/api/' + slug + '/stream');
+        fuente.addEventListener('turno-actualizado', (evento) => {
+            pintar(JSON.parse(evento.data));
+        });
+        fuente.onerror = () => {
+            // si se corta la conexión, hacemos polling de respaldo cada 5s
+            setInterval(() => {
+                fetch('/api/' + slug + '/actual').then(r => r.json()).then(pintar).catch(() => {});
+            }, 5000);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${empresa.nombre} + ' · Panel de atención'">Panel</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style th:inline="text">
+        :root {
+            --color-primario: [[${empresa.colorPrimario}]];
+            --color-secundario: [[${empresa.colorSecundario}]];
+        }
+    </style>
+</head>
+<body>
+    <div class="encabezado">
+        <img th:if="${empresa.logoUrl}" th:src="${empresa.logoUrl}" alt="logo">
+        <h1 th:text="${empresa.nombre} + ' · Panel de atención'">Panel</h1>
+    </div>
+
+    <div class="contenedor">
+        <div class="tarjeta">
+            <div class="etiqueta">Atendiendo</div>
+            <div class="numero-actual" id="numero-actual">--</div>
+            <div class="info-espera" id="info-espera">Personas en espera: --</div>
+
+            <label for="ventanilla" style="margin-top:20px; text-align:left;">Tu nombre / ventanilla (opcional)</label>
+            <input type="text" id="ventanilla" placeholder="Ej: Box 2, Ana">
+
+            <button class="boton" id="btn-siguiente">Llamar siguiente</button>
+        </div>
+        <div class="pie">
+            <a th:href="${'/' + empresa.slug}" style="color:inherit;">Ver pantalla pública</a>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        const slug = /*[[${empresa.slug}]]*/ 'demo';
+
+        function pintar(datos) {
+            document.getElementById('numero-actual').textContent = datos.etiqueta;
+            document.getElementById('info-espera').textContent = 'Personas en espera: ' + datos.enEspera;
+        }
+
+        fetch('/api/' + slug + '/actual').then(r => r.json()).then(pintar);
+
+        document.getElementById('btn-siguiente').addEventListener('click', () => {
+            const ventanilla = document.getElementById('ventanilla').value.trim();
+            const url = '/api/' + slug + '/siguiente' + (ventanilla ? ('?ventanilla=' + encodeURIComponent(ventanilla)) : '');
+            fetch(url, { method: 'POST' }).then(r => r.json()).then(pintar);
+        });
+    </script>
+</body>
+</html>

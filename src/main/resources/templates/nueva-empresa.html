@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva empresa · Turnero</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="encabezado">
+        <h1>🎫 Nueva empresa</h1>
+    </div>
+
+    <div class="contenedor">
+        <div class="tarjeta" style="text-align:left;">
+            <form id="form-empresa">
+                <label for="slug">URL amigable (sin espacios ni acentos)</label>
+                <input type="text" id="slug" placeholder="ej: mi-cafeteria" required>
+
+                <label for="nombre">Nombre del negocio</label>
+                <input type="text" id="nombre" placeholder="ej: Cafetería El Sol" required>
+
+                <label for="logoUrl">URL del logo (opcional)</label>
+                <input type="url" id="logoUrl" placeholder="https://...">
+
+                <label for="prefijo">Prefijo de los números</label>
+                <input type="text" id="prefijo" value="A" maxlength="5">
+
+                <label for="colorPrimario">Color principal</label>
+                <input type="text" id="colorPrimario" value="#2563eb">
+
+                <label for="colorSecundario">Color secundario</label>
+                <input type="text" id="colorSecundario" value="#1e293b">
+
+                <label for="mensaje">Mensaje de bienvenida</label>
+                <input type="text" id="mensaje" value="Bienvenido, tome su turno">
+
+                <button type="submit" class="boton">Crear empresa</button>
+            </form>
+            <p id="resultado"></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('form-empresa').addEventListener('submit', (evento) => {
+            evento.preventDefault();
+            const cuerpo = {
+                slug: document.getElementById('slug').value.trim(),
+                nombre: document.getElementById('nombre').value.trim(),
+                logoUrl: document.getElementById('logoUrl').value.trim(),
+                prefijo: document.getElementById('prefijo').value.trim() || 'A',
+                colorPrimario: document.getElementById('colorPrimario').value.trim(),
+                colorSecundario: document.getElementById('colorSecundario').value.trim(),
+                mensajeBienvenida: document.getElementById('mensaje').value.trim()
+            };
+            fetch('/api/empresas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cuerpo)
+            }).then(r => {
+                if (r.status === 201) {
+                    window.location.href = '/' + cuerpo.slug;
+                } else if (r.status === 409) {
+                    document.getElementById('resultado').textContent = 'Ya existe una empresa con esa URL.';
+                } else {
+                    document.getElementById('resultado').textContent = 'Ocurrió un error al crear la empresa.';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

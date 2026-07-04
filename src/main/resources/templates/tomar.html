@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${empresa.nombre} + ' · Tomar turno'">Tomar turno</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style th:inline="text">
+        :root {
+            --color-primario: [[${empresa.colorPrimario}]];
+            --color-secundario: [[${empresa.colorSecundario}]];
+        }
+    </style>
+</head>
+<body>
+    <div class="encabezado">
+        <img th:if="${empresa.logoUrl}" th:src="${empresa.logoUrl}" alt="logo">
+        <h1 th:text="${empresa.nombre}">Nombre de la empresa</h1>
+    </div>
+
+    <div class="contenedor">
+        <div class="tarjeta">
+            <p th:text="${empresa.mensajeBienvenida}">Bienvenido</p>
+            <button class="boton" id="btn-tomar">Tomar turno</button>
+
+            <div class="ticket-tomado" id="ticket-tomado">
+                <div class="etiqueta">Tu número es</div>
+                <div class="numero-actual" id="numero-obtenido">--</div>
+                <div class="info-espera" id="posicion-obtenida"></div>
+            </div>
+        </div>
+        <div class="pie">
+            <a th:href="${'/' + empresa.slug}" style="color:inherit;">Ver pantalla de turnos</a>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        const slug = /*[[${empresa.slug}]]*/ 'demo';
+        const boton = document.getElementById('btn-tomar');
+
+        boton.addEventListener('click', () => {
+            boton.disabled = true;
+            fetch('/api/' + slug + '/turnos', { method: 'POST' })
+                .then(r => r.json())
+                .then(datos => {
+                    document.getElementById('numero-obtenido').textContent = datos.etiqueta;
+                    document.getElementById('posicion-obtenida').textContent =
+                        'Personas delante tuyo: ' + Math.max(0, datos.enEspera - 1);
+                    document.getElementById('ticket-tomado').classList.add('visible');
+                    boton.style.display = 'none';
+                })
+                .catch(() => {
+                    alert('No se pudo tomar el turno. Intentá nuevamente.');
+                    boton.disabled = false;
+                });
+        });
+    </script>
+</body>
+</html>

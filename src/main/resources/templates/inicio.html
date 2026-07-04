@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turnero · Sistema de turnos</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="encabezado">
+        <h1>🎫 Turnero</h1>
+    </div>
+
+    <div class="contenedor">
+        <div class="tarjeta" style="text-align:left;">
+            <h2>Empresas activas</h2>
+            <ul class="lista-empresas" th:if="${!empresas.isEmpty()}">
+                <li th:each="e : ${empresas}">
+                    <span th:text="${e.nombre}">Nombre</span>
+                    <span class="enlaces-empresa">
+                        <a th:href="${'/' + e.slug}">Pantalla</a>
+                        <a th:href="${'/' + e.slug + '/tomar'}">Tomar turno</a>
+                        <a th:href="${'/' + e.slug + '/panel'}">Panel</a>
+                    </span>
+                </li>
+            </ul>
+            <p th:if="${empresas.isEmpty()}">Todavía no hay empresas cargadas.</p>
+
+            <a class="boton" href="/admin/nueva-empresa">+ Agregar nueva empresa</a>
+        </div>
+    </div>
+</body>
+</html>
