@@ -1,7 +1,10 @@
 package com.turnero.controller;
 
+import com.turnero.dto.ConsultaDniResponse;
+import com.turnero.dto.TomarTurnoRequest;
 import com.turnero.model.Turno;
 import com.turnero.service.ColaService;
+import com.turnero.service.ConsultaDniService;
 import com.turnero.service.SseService;
 import com.turnero.service.TurnoInfo;
 import org.springframework.http.MediaType;
@@ -17,16 +20,28 @@ public class TurnoApiController {
 
     private final ColaService colaService;
     private final SseService sseService;
+    private final ConsultaDniService consultaDniService;
 
-    public TurnoApiController(ColaService colaService, SseService sseService) {
+    public TurnoApiController(ColaService colaService, SseService sseService, ConsultaDniService consultaDniService) {
         this.colaService = colaService;
         this.sseService = sseService;
+        this.consultaDniService = consultaDniService;
     }
 
-    // El cliente presiona "Tomar turno" al llegar
+    // Busca el nombre asociado a un DNI antes de tomar el turno.
+    // Si no se encuentra, el cliente carga el nombre a mano en la UI.
+    @GetMapping("/dni/{dni}")
+    public ConsultaDniResponse buscarPorDni(@PathVariable String dni) {
+        return consultaDniService.buscarNombrePorDni(dni)
+                .map(nombre -> new ConsultaDniResponse(dni, nombre, true))
+                .orElse(new ConsultaDniResponse(dni, null, false));
+    }
+
+    // El cliente presiona "Tomar turno" al llegar, ya con el DNI y el nombre confirmado/corregido
     @PostMapping("/turnos")
-    public ResponseEntity<Map<String, Object>> tomarTurno(@PathVariable String slug) {
-        Turno turno = colaService.tomarTurno(slug);
+    public ResponseEntity<Map<String, Object>> tomarTurno(@PathVariable String slug,
+                                                            @RequestBody TomarTurnoRequest cuerpo) {
+        Turno turno = colaService.tomarTurno(slug, cuerpo.dni(), cuerpo.nombre());
         long posicion = colaService.obtenerEstadoActual(slug).enEspera();
         return ResponseEntity.ok(Map.of(
                 "id", turno.getId(),
@@ -35,7 +50,7 @@ public class TurnoApiController {
         ));
     }
 
-    // El receptor llama al siguiente cliente. "ventanilla" es opcional (nombre del mostrador/box/agente).
+    // El receptor llama al siguiente cliente desde uno de los botones de box (BOX 1..BOX 5)
     @PostMapping("/siguiente")
     public TurnoInfo llamarSiguiente(@PathVariable String slug,
                                       @RequestParam(required = false, defaultValue = "") String ventanilla) {
@@ -55,3 +70,4 @@ public class TurnoApiController {
         return sseService.suscribir(slug);
     }
 }
+

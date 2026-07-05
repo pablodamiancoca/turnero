@@ -22,6 +22,8 @@
         <div class="tarjeta">
             <div class="etiqueta">Atendiendo ahora</div>
             <div class="numero-actual" id="numero-actual">--</div>
+            <div class="info-espera" id="info-nombre"></div>
+            <div class="info-espera" id="info-dni"></div>
             <div class="info-espera" id="info-ventanilla"></div>
             <div class="info-espera" id="info-espera">Personas en espera: --</div>
         </div>
@@ -38,6 +40,8 @@
             document.getElementById('numero-actual').textContent = datos.etiqueta;
             document.getElementById('info-espera').textContent = 'Personas en espera: ' + datos.enEspera;
             document.getElementById('info-ventanilla').textContent = datos.ventanilla ? ('Ventanilla: ' + datos.ventanilla) : '';
+            document.getElementById('info-nombre').textContent = datos.nombreCliente ? datos.nombreCliente : '';
+            document.getElementById('info-dni').textContent = datos.dni ? ('DNI: ' + datos.dni) : '';
         }
 
         // Estado inicial al cargar la página

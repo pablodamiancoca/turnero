@@ -22,6 +22,12 @@ public class Turno {
     @Column(length = 10)
     private String prefijo;
 
+    @Column(length = 20)
+    private String dni;
+
+    @Column(length = 150)
+    private String nombreCliente;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private EstadoTurno estado = EstadoTurno.ESPERANDO;
@@ -58,6 +64,12 @@ public class Turno {
 
     public String getPrefijo() { return prefijo; }
     public void setPrefijo(String prefijo) { this.prefijo = prefijo; }
+
+    public String getDni() { return dni; }
+    public void setDni(String dni) { this.dni = dni; }
+
+    public String getNombreCliente() { return nombreCliente; }
+    public void setNombreCliente(String nombreCliente) { this.nombreCliente = nombreCliente; }
 
     public EstadoTurno getEstado() { return estado; }
     public void setEstado(EstadoTurno estado) { this.estado = estado; }

@@ -22,12 +22,18 @@
         <div class="tarjeta">
             <div class="etiqueta">Atendiendo</div>
             <div class="numero-actual" id="numero-actual">--</div>
+            <div class="info-espera" id="info-nombre"></div>
+            <div class="info-espera" id="info-dni"></div>
             <div class="info-espera" id="info-espera">Personas en espera: --</div>
 
-            <label for="ventanilla" style="margin-top:20px; text-align:left;">Tu nombre / ventanilla (opcional)</label>
-            <input type="text" id="ventanilla" placeholder="Ej: Box 2, Ana">
-
-            <button class="boton" id="btn-siguiente">Llamar siguiente</button>
+            <label style="margin-top:20px; text-align:left;">Elegí tu box para llamar al siguiente cliente</label>
+            <div class="panel-fila" id="botones-box">
+                <button class="boton secundario" data-box="BOX 1">BOX 1</button>
+                <button class="boton secundario" data-box="BOX 2">BOX 2</button>
+                <button class="boton secundario" data-box="BOX 3">BOX 3</button>
+                <button class="boton secundario" data-box="BOX 4">BOX 4</button>
+                <button class="boton secundario" data-box="BOX 5">BOX 5</button>
+            </div>
         </div>
         <div class="pie">
             <a th:href="${'/' + empresa.slug}" style="color:inherit;">Ver pantalla pública</a>
@@ -40,14 +46,19 @@
         function pintar(datos) {
             document.getElementById('numero-actual').textContent = datos.etiqueta;
             document.getElementById('info-espera').textContent = 'Personas en espera: ' + datos.enEspera;
+            document.getElementById('info-nombre').textContent = datos.nombreCliente ? datos.nombreCliente : '';
+            document.getElementById('info-dni').textContent = datos.dni ? ('DNI: ' + datos.dni) : '';
         }
 
         fetch('/api/' + slug + '/actual').then(r => r.json()).then(pintar);
 
-        document.getElementById('btn-siguiente').addEventListener('click', () => {
-            const ventanilla = document.getElementById('ventanilla').value.trim();
-            const url = '/api/' + slug + '/siguiente' + (ventanilla ? ('?ventanilla=' + encodeURIComponent(ventanilla)) : '');
-            fetch(url, { method: 'POST' }).then(r => r.json()).then(pintar);
+        document.querySelectorAll('#botones-box button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const box = btn.getAttribute('data-box');
+                fetch('/api/' + slug + '/siguiente?ventanilla=' + encodeURIComponent(box), { method: 'POST' })
+                    .then(r => r.json())
+                    .then(pintar);
+            });
         });
     </script>
 </body>

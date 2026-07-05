@@ -30,9 +30,9 @@ public class ColaService {
                 .orElseThrow(() -> new EntityNotFoundException("No existe una empresa con slug: " + slug));
     }
 
-    /** El cliente toma un nuevo número al llegar al local. */
+    /** El cliente toma un nuevo número al llegar al local, con su DNI y nombre ya confirmado/corregido. */
     @Transactional
-    public Turno tomarTurno(String slug) {
+    public Turno tomarTurno(String slug, String dni, String nombre) {
         Empresa empresa = buscarEmpresa(slug);
         LocalDate hoy = LocalDate.now();
 
@@ -51,6 +51,8 @@ public class ColaService {
         turno.setEmpresa(empresa);
         turno.setNumero(siguienteNumero);
         turno.setPrefijo(empresa.getPrefijo());
+        turno.setDni(dni);
+        turno.setNombreCliente(nombre);
         turno.setEstado(EstadoTurno.ESPERANDO);
         turno.setFecha(hoy);
         turno.setCreadoEn(LocalDateTime.now());
@@ -103,9 +105,9 @@ public class ColaService {
         long enEspera = turnoRepository.countByEmpresaAndFechaAndEstado(empresa, hoy, EstadoTurno.ESPERANDO);
 
         if (actual == null) {
-            return new TurnoInfo(null, "--", "SIN_TURNOS", null, (int) enEspera);
+            return new TurnoInfo(null, "--", "SIN_TURNOS", null, (int) enEspera, null, null);
         }
         return new TurnoInfo(actual.getId(), actual.getEtiqueta(), actual.getEstado().name(),
-                actual.getVentanilla(), (int) enEspera);
+                actual.getVentanilla(), (int) enEspera, actual.getDni(), actual.getNombreCliente());
     }
 }

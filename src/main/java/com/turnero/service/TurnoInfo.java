@@ -9,5 +9,7 @@ public record TurnoInfo(
         String etiqueta,
         String estado,
         String ventanilla,
-        int enEspera
+        int enEspera,
+        String dni,
+        String nombreCliente
 ) {}
