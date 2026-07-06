@@ -35,6 +35,17 @@
                 <label for="mensaje">Mensaje de bienvenida</label>
                 <input type="text" id="mensaje" value="Bienvenido, tome su turno">
 
+                <label for="idioma">Idioma por defecto (para anunciar el nombre al llamar al cliente)</label>
+                <select id="idioma">
+                    <option value="es-AR" selected>Español</option>
+                    <option value="en-US">English</option>
+                    <option value="pt-BR">Português</option>
+                    <option value="fr-FR">Français</option>
+                    <option value="it-IT">Italiano</option>
+                    <option value="de-DE">Deutsch</option>
+                    <option value="zh-CN">中文</option>
+                </select>
+
                 <button type="submit" class="boton">Crear empresa</button>
             </form>
             <p id="resultado"></p>
@@ -51,7 +62,8 @@
                 prefijo: document.getElementById('prefijo').value.trim() || 'A',
                 colorPrimario: document.getElementById('colorPrimario').value.trim(),
                 colorSecundario: document.getElementById('colorSecundario').value.trim(),
-                mensajeBienvenida: document.getElementById('mensaje').value.trim()
+                mensajeBienvenida: document.getElementById('mensaje').value.trim(),
+                idioma: document.getElementById('idioma').value
             };
             fetch('/api/empresas', {
                 method: 'POST',

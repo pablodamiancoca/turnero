@@ -53,6 +53,7 @@ public class EmpresaApiController {
         if (cambios.getColorSecundario() != null) empresa.setColorSecundario(cambios.getColorSecundario());
         if (cambios.getPrefijo() != null) empresa.setPrefijo(cambios.getPrefijo());
         if (cambios.getMensajeBienvenida() != null) empresa.setMensajeBienvenida(cambios.getMensajeBienvenida());
+        if (cambios.getIdioma() != null) empresa.setIdioma(cambios.getIdioma());
         empresa.setReinicioDiario(cambios.isReinicioDiario());
         empresa.setActivo(cambios.isActivo());
 

@@ -35,6 +35,9 @@
 
     <script th:inline="javascript">
         const slug = /*[[${empresa.slug}]]*/ 'demo';
+        const idioma = /*[[${empresa.idioma}]]*/ 'es-AR';
+        let ultimoIdAnunciado = null;
+        let yaCargoInicial = false;
 
         function pintar(datos) {
             document.getElementById('numero-actual').textContent = datos.etiqueta;
@@ -42,6 +45,33 @@
             document.getElementById('info-ventanilla').textContent = datos.ventanilla ? ('Ventanilla: ' + datos.ventanilla) : '';
             document.getElementById('info-nombre').textContent = datos.nombreCliente ? datos.nombreCliente : '';
             document.getElementById('info-dni').textContent = datos.dni ? ('DNI: ' + datos.dni) : '';
+
+            if (!yaCargoInicial) {
+                // al cargar la página no anunciamos el turno que ya estaba en pantalla,
+                // solo los que se llamen de ahí en adelante
+                yaCargoInicial = true;
+                ultimoIdAnunciado = datos.id;
+                return;
+            }
+
+            if (datos.estado === 'LLAMANDO' && datos.id !== ultimoIdAnunciado) {
+                ultimoIdAnunciado = datos.id;
+                anunciarLlamado(datos);
+            }
+        }
+
+        function anunciarLlamado(datos) {
+            if (!('speechSynthesis' in window)) { return; }
+
+            const numeroHablado = datos.etiqueta.replace('-', ' ');
+            const texto = datos.nombreCliente
+                ? 'Turno ' + numeroHablado + '. ' + datos.nombreCliente
+                : 'Turno ' + numeroHablado;
+
+            const anuncio = new SpeechSynthesisUtterance(texto);
+            anuncio.lang = idioma || 'es-AR'; // Español por defecto si la empresa no tiene idioma configurado
+            window.speechSynthesis.cancel(); // corta cualquier anuncio anterior que siga sonando
+            window.speechSynthesis.speak(anuncio);
         }
 
         // Estado inicial al cargar la página

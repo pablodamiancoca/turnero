@@ -43,6 +43,11 @@ public class Empresa {
     @Column(length = 300)
     private String mensajeBienvenida = "Bienvenido, tome su turno";
 
+    // Idioma en el que se pronuncia el nombre del cliente al llamarlo (código BCP-47 para
+    // el sintetizador de voz del navegador). Español (Argentina) es el valor por defecto.
+    @Column(length = 15)
+    private String idioma = "es-AR";
+
     // Si el número diario se reinicia a 1 cada día
     private boolean reinicioDiario = true;
 
@@ -79,6 +84,9 @@ public class Empresa {
 
     public String getMensajeBienvenida() { return mensajeBienvenida; }
     public void setMensajeBienvenida(String mensajeBienvenida) { this.mensajeBienvenida = mensajeBienvenida; }
+
+    public String getIdioma() { return idioma; }
+    public void setIdioma(String idioma) { this.idioma = idioma; }
 
     public boolean isReinicioDiario() { return reinicioDiario; }
     public void setReinicioDiario(boolean reinicioDiario) { this.reinicioDiario = reinicioDiario; }
