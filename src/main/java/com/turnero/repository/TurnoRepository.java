@@ -17,6 +17,8 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
 
     List<Turno> findByEmpresaAndFechaOrderByCreadoEnAsc(Empresa empresa, LocalDate fecha);
 
+    List<Turno> findByEmpresaAndEstadoOrderByCreadoEnAsc(Empresa empresa, EstadoTurno estado);
+
     Optional<Turno> findFirstByEmpresaAndFechaOrderByNumeroDesc(Empresa empresa, LocalDate fecha);
 
     Optional<Turno> findFirstByEmpresaOrderByNumeroDesc(Empresa empresa);

@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ColaService {
@@ -109,5 +111,15 @@ public class ColaService {
         }
         return new TurnoInfo(actual.getId(), actual.getEtiqueta(), actual.getEstado().name(),
                 actual.getVentanilla(), (int) enEspera, actual.getDni(), actual.getNombreCliente());
+    }
+
+    /** Lista de personas que todavía esperan ser atendidas, en orden de llegada. */
+    @Transactional(readOnly = true)
+    public List<TurnoEspera> obtenerListaEspera(String slug) {
+        Empresa empresa = buscarEmpresa(slug);
+        return turnoRepository.findByEmpresaAndEstadoOrderByCreadoEnAsc(empresa, EstadoTurno.ESPERANDO)
+                .stream()
+                .map(t -> new TurnoEspera(t.getEtiqueta(), t.getNombreCliente()))
+                .collect(Collectors.toList());
     }
 }

@@ -27,6 +27,13 @@
             <div class="info-espera" id="info-ventanilla"></div>
             <div class="info-espera" id="info-espera">Personas en espera: --</div>
         </div>
+        <div class="tarjeta">
+            <div class="etiqueta">Personas en espera</div>
+            <ul class="lista-empresas" id="lista-espera" style="text-align:left; margin-top:16px;">
+                <li>Cargando...</li>
+            </ul>
+        </div>
+
         <div class="pie">
             Para tomar un número, ingresá a
             <strong th:text="${'/' + empresa.slug + '/tomar'}">/empresa/tomar</strong>
@@ -60,6 +67,24 @@
             }
         }
 
+        function pintarEspera(lista) {
+            const contenedor = document.getElementById('lista-espera');
+            contenedor.innerHTML = '';
+            if (!lista || lista.length === 0) {
+                contenedor.innerHTML = '<li>No hay nadie esperando</li>';
+                return;
+            }
+            lista.forEach(turno => {
+                const li = document.createElement('li');
+                li.textContent = turno.etiqueta + (turno.nombreCliente ? ' — ' + turno.nombreCliente : '');
+                contenedor.appendChild(li);
+            });
+        }
+
+        function actualizarListaEspera() {
+            fetch('/api/' + slug + '/espera').then(r => r.json()).then(pintarEspera).catch(() => {});
+        }
+
         function anunciarLlamado(datos) {
             if (!('speechSynthesis' in window)) { return; }
 
@@ -76,16 +101,19 @@
 
         // Estado inicial al cargar la página
         fetch('/api/' + slug + '/actual').then(r => r.json()).then(pintar).catch(() => {});
+        actualizarListaEspera();
 
         // Actualización en tiempo real vía Server-Sent Events
         const fuente = new EventSource('/api/' + slug + '/stream');
         fuente.addEventListener('turno-actualizado', (evento) => {
             pintar(JSON.parse(evento.data));
+            actualizarListaEspera();
         });
         fuente.onerror = () => {
             // si se corta la conexión, hacemos polling de respaldo cada 5s
             setInterval(() => {
                 fetch('/api/' + slug + '/actual').then(r => r.json()).then(pintar).catch(() => {});
+                actualizarListaEspera();
             }, 5000);
         };
     </script>

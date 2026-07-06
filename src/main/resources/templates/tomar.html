@@ -11,6 +11,33 @@
             --color-secundario: [[${empresa.colorSecundario}]];
         }
     </style>
+    <style>
+        .teclado {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .fila-teclado {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .tecla {
+            min-width: 40px;
+            padding: 12px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            background: #e2e8f0;
+            color: var(--color-secundario);
+            cursor: pointer;
+        }
+        .tecla:active { background: var(--color-primario); color: #fff; }
+        .tecla.ancha { min-width: 140px; }
+    </style>
 </head>
 <body>
     <div class="encabezado">
@@ -22,18 +49,51 @@
         <div class="tarjeta">
             <p th:text="${empresa.mensajeBienvenida}">Bienvenido</p>
 
-            <div id="paso-dni">
-                <label for="dni" style="text-align:left;">Ingresá tu DNI</label>
-                <input type="text" id="dni" inputmode="numeric" placeholder="Ej: 30123456" maxlength="10">
-                <button class="boton" id="btn-buscar">Buscar</button>
-            </div>
-
-            <div id="paso-nombre" style="display:none; text-align:left;">
-                <p id="mensaje-nombre"></p>
+            <div id="paso-nombre" style="text-align:left;">
                 <label for="nombre">Nombre y apellido</label>
-                <input type="text" id="nombre" placeholder="Nombre completo">
-                <button class="boton" id="btn-tomar">Confirmar y tomar turno</button>
-                <button class="boton secundario" id="btn-cambiar-dni" type="button">Cambiar DNI</button>
+                <input type="text" id="nombre" placeholder="Nombre completo" readonly>
+
+                <div class="teclado" id="teclado">
+                    <div class="fila-teclado">
+                        <button type="button" class="tecla" data-letra="Q">Q</button>
+                        <button type="button" class="tecla" data-letra="W">W</button>
+                        <button type="button" class="tecla" data-letra="E">E</button>
+                        <button type="button" class="tecla" data-letra="R">R</button>
+                        <button type="button" class="tecla" data-letra="T">T</button>
+                        <button type="button" class="tecla" data-letra="Y">Y</button>
+                        <button type="button" class="tecla" data-letra="U">U</button>
+                        <button type="button" class="tecla" data-letra="I">I</button>
+                        <button type="button" class="tecla" data-letra="O">O</button>
+                        <button type="button" class="tecla" data-letra="P">P</button>
+                    </div>
+                    <div class="fila-teclado">
+                        <button type="button" class="tecla" data-letra="A">A</button>
+                        <button type="button" class="tecla" data-letra="S">S</button>
+                        <button type="button" class="tecla" data-letra="D">D</button>
+                        <button type="button" class="tecla" data-letra="F">F</button>
+                        <button type="button" class="tecla" data-letra="G">G</button>
+                        <button type="button" class="tecla" data-letra="H">H</button>
+                        <button type="button" class="tecla" data-letra="J">J</button>
+                        <button type="button" class="tecla" data-letra="K">K</button>
+                        <button type="button" class="tecla" data-letra="L">L</button>
+                        <button type="button" class="tecla" data-letra="Ñ">Ñ</button>
+                    </div>
+                    <div class="fila-teclado">
+                        <button type="button" class="tecla" data-letra="Z">Z</button>
+                        <button type="button" class="tecla" data-letra="X">X</button>
+                        <button type="button" class="tecla" data-letra="C">C</button>
+                        <button type="button" class="tecla" data-letra="V">V</button>
+                        <button type="button" class="tecla" data-letra="B">B</button>
+                        <button type="button" class="tecla" data-letra="N">N</button>
+                        <button type="button" class="tecla" data-letra="M">M</button>
+                    </div>
+                    <div class="fila-teclado">
+                        <button type="button" class="tecla ancha" id="tecla-espacio">Espacio</button>
+                        <button type="button" class="tecla ancha" id="tecla-borrar">⌫ Borrar</button>
+                    </div>
+                </div>
+
+                <button class="boton" id="btn-tomar" style="margin-top:16px;">Tomar turno</button>
             </div>
 
             <div class="ticket-tomado" id="ticket-tomado">
@@ -46,38 +106,24 @@
 
     <script th:inline="javascript">
         const slug = /*[[${empresa.slug}]]*/ 'demo';
-        let dniActual = '';
+        const inputNombre = document.getElementById('nombre');
 
-        document.getElementById('btn-buscar').addEventListener('click', () => {
-            const dni = document.getElementById('dni').value.trim();
-            if (!dni) { return; }
-            dniActual = dni;
-
-            fetch('/api/' + slug + '/dni/' + encodeURIComponent(dni))
-                .then(r => r.json())
-                .then(datos => {
-                    const mensaje = document.getElementById('mensaje-nombre');
-                    const inputNombre = document.getElementById('nombre');
-                    if (datos.encontrado) {
-                        inputNombre.value = datos.nombre;
-                        mensaje.textContent = '¿Es correcto este nombre? Si no, corregilo antes de continuar.';
-                    } else {
-                        inputNombre.value = '';
-                        mensaje.textContent = 'No encontramos ese DNI. Ingresá tu nombre completo.';
-                    }
-                    document.getElementById('paso-dni').style.display = 'none';
-                    document.getElementById('paso-nombre').style.display = 'block';
-                })
-                .catch(() => alert('No se pudo verificar el DNI. Intentá nuevamente.'));
+        document.querySelectorAll('.tecla[data-letra]').forEach(tecla => {
+            tecla.addEventListener('click', () => {
+                inputNombre.value += tecla.getAttribute('data-letra');
+            });
         });
 
-        document.getElementById('btn-cambiar-dni').addEventListener('click', () => {
-            document.getElementById('paso-nombre').style.display = 'none';
-            document.getElementById('paso-dni').style.display = 'block';
+        document.getElementById('tecla-espacio').addEventListener('click', () => {
+            inputNombre.value += ' ';
+        });
+
+        document.getElementById('tecla-borrar').addEventListener('click', () => {
+            inputNombre.value = inputNombre.value.slice(0, -1);
         });
 
         document.getElementById('btn-tomar').addEventListener('click', () => {
-            const nombre = document.getElementById('nombre').value.trim();
+            const nombre = inputNombre.value.trim();
             if (!nombre) { alert('Ingresá tu nombre para continuar.'); return; }
 
             const boton = document.getElementById('btn-tomar');
@@ -86,7 +132,7 @@
             fetch('/api/' + slug + '/turnos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dni: dniActual, nombre: nombre })
+                body: JSON.stringify({ nombre: nombre })
             })
                 .then(r => r.json())
                 .then(datos => {
@@ -96,7 +142,7 @@
                     document.getElementById('ticket-tomado').classList.add('visible');
                     document.getElementById('paso-nombre').style.display = 'none';
 
-                    // Vuelve a /{slug}/tomar para que el próximo cliente pueda cargar su DNI
+                    // Vuelve a /{slug}/tomar para que el próximo cliente pueda cargar su nombre
                     setTimeout(() => {
                         window.location.href = '/' + slug + '/tomar';
                     }, 5000);
