@@ -42,9 +42,6 @@
                 <div class="info-espera" id="posicion-obtenida"></div>
             </div>
         </div>
-        <div class="pie">
-            <a th:href="${'/' + empresa.slug}" style="color:inherit;">Ver pantalla de turnos</a>
-        </div>
     </div>
 
     <script th:inline="javascript">
@@ -98,6 +95,11 @@
                         'Personas delante tuyo: ' + Math.max(0, datos.enEspera - 1);
                     document.getElementById('ticket-tomado').classList.add('visible');
                     document.getElementById('paso-nombre').style.display = 'none';
+
+                    // Vuelve a /{slug}/tomar para que el próximo cliente pueda cargar su DNI
+                    setTimeout(() => {
+                        window.location.href = '/' + slug + '/tomar';
+                    }, 5000);
                 })
                 .catch(() => {
                     alert('No se pudo tomar el turno. Intentá nuevamente.');
