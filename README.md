@@ -1,28 +1,67 @@
 # 🎫 Turnero — Sistema de turnos multi-empresa
 
 App en **Java + Spring Boot** para emitir números de turno a clientes que llegan a un local,
-mostrar el número que se está atendiendo en una pantalla pública y permitir que los
-receptores/vendedores avancen al siguiente cliente. Pensada desde el inicio para que un mismo
-despliegue sirva a **varias empresas distintas**, cada una con su propio logo, colores, textos
-y URL amigable — sin tocar código para dar de alta un negocio nuevo.
+validar su identidad con DNI, mostrar el número que se está atendiendo (con nombre y DNI) en
+una pantalla pública que además **anuncia por voz** al cliente llamado, y permitir que los
+receptores/vendedores avancen al siguiente turno desde botones de box. Pensada desde el inicio
+para que un mismo despliegue sirva a **varias empresas distintas**, cada una con su propio logo,
+colores, idioma y URL amigable — sin tocar código para dar de alta un negocio nuevo.
 
 ## ✨ Qué incluye
 
 - **URL amigable por empresa**: `tudominio.com/mi-negocio`, `tudominio.com/mi-negocio/tomar`,
   `tudominio.com/mi-negocio/panel`.
-- **Pantalla pública** que se actualiza sola en tiempo real (Server-Sent Events) cuando el
-  receptor llama al siguiente cliente — ideal para poner en un monitor de la sala de espera.
-- **Página para tomar turno**: el cliente entra desde su celular (por ejemplo escaneando un QR
-  en la puerta) y toca un botón para obtener su número.
-- **Panel del receptor**: botón "Llamar siguiente", con campo opcional para indicar
-  ventanilla/box/nombre de quien atiende.
+- **Toma de turno con validación de DNI** (`/{slug}/tomar`): el cliente ingresa su DNI, la app
+  busca el nombre asociado (vía un servicio conectable — ver sección de DNI más abajo), se lo
+  muestra para confirmar o corregir, y recién ahí genera el número. Después de tomar el turno,
+  la página vuelve sola a `/{slug}/tomar` a los pocos segundos para que el siguiente cliente
+  pueda cargar el suyo (pensada para un dispositivo fijo tipo kiosco en la entrada).
+- **Pantalla pública** (`/{slug}`) que se actualiza sola en tiempo real (Server-Sent Events),
+  muestra el número, el nombre y el DNI del cliente que se está atendiendo, y **pronuncia el
+  nombre por voz** (Web Speech API del navegador) en el idioma configurado para esa empresa —
+  español por defecto si no se configuró ninguno.
+- **Panel del receptor** (`/{slug}/panel`): 5 botones fijos (BOX 1 a BOX 5) para llamar al
+  siguiente cliente indicando desde qué box se lo atiende.
 - **Personalización total por empresa**, sin recompilar la app: logo (URL de imagen), color
-  primario y secundario, prefijo del número (ej. `A-001`, `B-014`), mensaje de bienvenida, y si
-  la numeración reinicia cada día o es continua.
+  primario y secundario, prefijo del número (ej. `A-001`, `B-014`), mensaje de bienvenida,
+  idioma por defecto (para el anuncio por voz), y si la numeración reinicia cada día o es
+  continua.
 - **API REST** para automatizar la creación/edición de empresas y para integrarlo con otros
   sistemas (por ejemplo, para imprimir el ticket en una impresora térmica).
 - Base de datos **H2 embebida persistida en archivo** (no requiere instalar nada aparte) — fácil
   de migrar a PostgreSQL el día que haga falta más escala (ver más abajo).
+
+## 🪪 Validación de DNI — cómo funciona hoy
+
+`/{slug}/tomar` le pide el DNI al cliente y llama a `GET /api/{slug}/dni/{dni}` para buscar un
+nombre asociado. Esa búsqueda pasa por la interfaz `ConsultaDniService`.
+
+**Importante:** no existe una API pública y gratuita "oficial" del RENAPER/ANSES para esto. Hoy
+el proyecto trae una implementación de ejemplo (`ConsultaDniServiceMock`) que **no simula ni
+inventa datos reales** — siempre devuelve "no encontrado", por lo que el cliente carga su
+nombre a mano. El flujo de la UI (buscar → confirmar o corregir → tomar turno) funciona igual.
+
+Para conectar un proveedor real, hay que:
+1. Contratar un proveedor autorizado (por ejemplo, un servicio de validación de identidad/KYC).
+2. Crear una nueva clase que implemente `ConsultaDniService` con esa integración.
+3. Cumplir con la **Ley 25.326 de Protección de Datos Personales**: informar al titular, pedir
+   consentimiento cuando corresponda, y resguardar el DNI (es un dato personal).
+
+No hace falta tocar el resto de la app — el resto del código depende solo de la interfaz.
+
+## 🔊 Anuncio por voz — cómo funciona hoy
+
+Cuando el receptor llama a un cliente nuevo desde el panel, la pantalla pública recibe el evento
+en tiempo real y usa la **Web Speech API** del navegador para decir "Turno [número]. [Nombre]",
+en el idioma configurado en la empresa (campo `idioma`, código BCP-47, ej. `es-AR`, `en-US`).
+
+Dos cosas a tener en cuenta:
+- Depende de las voces instaladas en el navegador/sistema operativo donde esté abierta la
+  pantalla. La mayoría de los sistemas ya traen voz en español; para idiomas menos comunes
+  puede hacer falta instalar un paquete de voz en esa compu.
+- Algunos navegadores (sobre todo Chrome) exigen al menos un clic del usuario en la página antes
+  de permitir audio automático. Si el primer anuncio no suena, un clic en cualquier parte de la
+  pantalla antes de arrancar a atender lo resuelve.
 
 ## 📁 Estructura del proyecto
 
@@ -33,8 +72,10 @@ turnero/
 ├── src/main/java/com/turnero/
 │   ├── TurneroApplication.java
 │   ├── model/           Empresa, Turno, EstadoTurno
+│   ├── dto/             TomarTurnoRequest, ConsultaDniResponse
 │   ├── repository/      EmpresaRepository, TurnoRepository
-│   ├── service/         ColaService (lógica de la fila), SseService (tiempo real)
+│   ├── service/         ColaService (lógica de la fila), SseService (tiempo real),
+│   │                     ConsultaDniService (interfaz) + ConsultaDniServiceMock (ejemplo)
 │   ├── controller/      VistaController (páginas), EmpresaApiController, TurnoApiController
 │   └── config/          DataInitializer (empresa demo), manejadores de error
 └── src/main/resources/
@@ -54,14 +95,14 @@ mvn spring-boot:run
 La app queda en `http://localhost:8080`. Al arrancar por primera vez se crea automáticamente
 una empresa de ejemplo:
 
-- Pantalla pública: `http://localhost:8080/demo`
-- Tomar turno: `http://localhost:8080/demo/tomar`
-- Panel del receptor: `http://localhost:8080/demo/panel`
+- Tomar turno (con DNI): `http://localhost:8080/demo/tomar`
+- Pantalla pública (con voz): `http://localhost:8080/demo`
+- Panel del receptor (BOX 1-5): `http://localhost:8080/demo/panel`
 
 ## 🏢 Cómo agregar una empresa nueva (personalización)
 
 **Opción 1 — Formulario web:** entrá a `/admin/nueva-empresa` y completá nombre, slug (la URL),
-logo, colores y mensaje de bienvenida.
+logo, colores, mensaje de bienvenida e idioma por defecto.
 
 **Opción 2 — API REST**, útil si querés automatizar el alta de clientes de tu SaaS:
 
@@ -76,26 +117,28 @@ curl -X POST http://localhost:8080/api/empresas \
         "colorSecundario": "#111827",
         "prefijo": "P",
         "mensajeBienvenida": "¡Bienvenida! Tomá tu turno",
+        "idioma": "es-AR",
         "reinicioDiario": true
       }'
 ```
 
 Con eso, automáticamente quedan disponibles `/peluqueria-ana`, `/peluqueria-ana/tomar` y
-`/peluqueria-ana/panel`, ya con su propio logo y colores.
+`/peluqueria-ana/panel`, ya con su propio logo, colores e idioma.
 
 Para editar una empresa existente: `PUT /api/empresas/{slug}` con los campos a cambiar.
 
 ## 🔌 Referencia rápida de la API
 
-| Método | Endpoint                         | Qué hace                                          |
-|--------|-----------------------------------|----------------------------------------------------|
-| POST   | `/api/empresas`                  | Crea una empresa nueva                              |
-| GET    | `/api/empresas/{slug}`           | Datos de una empresa                                |
-| PUT    | `/api/empresas/{slug}`           | Actualiza logo/colores/textos                       |
-| POST   | `/api/{slug}/turnos`             | El cliente toma un número nuevo                     |
-| POST   | `/api/{slug}/siguiente?ventanilla=Box1` | El receptor llama al siguiente cliente        |
-| GET    | `/api/{slug}/actual`             | Turno que se está atendiendo ahora + gente en espera|
-| GET    | `/api/{slug}/stream`             | Canal SSE para actualizar la pantalla en vivo       |
+| Método | Endpoint                                | Qué hace                                              |
+|--------|-------------------------------------------|--------------------------------------------------------|
+| POST   | `/api/empresas`                         | Crea una empresa nueva                                  |
+| GET    | `/api/empresas/{slug}`                  | Datos de una empresa                                    |
+| PUT    | `/api/empresas/{slug}`                  | Actualiza logo/colores/textos/idioma                    |
+| GET    | `/api/{slug}/dni/{dni}`                 | Busca el nombre asociado a un DNI (ver sección de DNI)  |
+| POST   | `/api/{slug}/turnos`                    | El cliente toma un número nuevo (body: `dni`, `nombre`) |
+| POST   | `/api/{slug}/siguiente?ventanilla=BOX 1`| El receptor llama al siguiente cliente desde ese box    |
+| GET    | `/api/{slug}/actual`                    | Turno actual (id, etiqueta, dni, nombre, en espera)     |
+| GET    | `/api/{slug}/stream`                    | Canal SSE para actualizar la pantalla en vivo           |
 
 ## ☁️ Cómo alojarlo GRATIS con URL pública
 
@@ -120,8 +163,9 @@ tarjeta de crédito, con Docker). Alternativas al final.
   molesta para la pantalla del local, podés usar un servicio gratuito como **UptimeRobot** para
   hacerle un ping cada 5 minutos y mantenerla despierta.
 - La base H2 en archivo vive dentro del contenedor: si Render reinicia o redeploya el servicio,
-  se pierde. Para producción real te recomiendo pasar a PostgreSQL — Render también ofrece una
-  base Postgres gratuita que podés conectar (ver sección siguiente).
+  se pierde (esto incluye los DNI y nombres cargados). Para producción real te recomiendo pasar
+  a PostgreSQL — Render también ofrece una base Postgres gratuita que podés conectar (ver
+  sección siguiente).
 
 ### Migrar a PostgreSQL gratuito en Render (recomendado para producción)
 
@@ -161,17 +205,22 @@ del servicio (Settings → Custom Domain) — solo hay que apuntar un registro D
 
 ## 🎨 Ideas para seguir personalizando a futuro
 
+- Conectar un proveedor real de validación de DNI (ver sección de DNI más arriba).
 - Agregar autenticación simple para el panel del receptor (usuario/contraseña por empresa).
-- Sonido/voz que anuncie el número al llamar al siguiente cliente.
 - Impresión automática del ticket en una impresora térmica conectada al navegador.
 - Métricas: tiempo promedio de espera y de atención por empresa.
-- Múltiples "ventanillas" simultáneas atendiendo turnos distintos en paralelo.
+- Que los 5 botones de box puedan atender turnos distintos en simultáneo (hoy hay un solo
+  turno "en llamada" por empresa a la vez).
 - Subida de logo como archivo (hoy se usa una URL de imagen para simplificar el hosting).
+- Hacer configurable el tiempo de espera antes de volver a `/{slug}/tomar` (hoy son 5 segundos
+  fijos, definidos en el JS de esa página).
 
 ## ⚠️ Notas
 
 - La consola de H2 (`/h2-console`) queda habilitada para poder inspeccionar los datos durante
   el desarrollo; se recomienda deshabilitarla (`spring.h2.console.enabled=false`) o protegerla
   antes de un uso productivo serio.
+- El DNI es un dato personal: antes de un uso productivo real, revisar la sección de DNI de
+  este README y cumplir con la Ley 25.326.
 - Este proyecto prioriza que sea simple de entender y extender. Antes de un uso con mucho
   tráfico real, sumar autenticación en el panel y mover a PostgreSQL.
